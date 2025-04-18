@@ -58,17 +58,20 @@ def run():
             except Exception as e:
                 logging.error(f"Error processing {symbol} [{label}]: {e}")
     
-    # Send Telegram messages with the results
-    if buy_signals:
-        message = "✅ <b>BUY SIGNALS</b>\n" + "\n".join(f"• {signal}" for signal in buy_signals)
-        send_telegram_message(message)
-    
-    if sell_signals:
-        message = "🚨 <b>SELL SIGNALS</b>\n" + "\n".join(f"• {signal}" for signal in sell_signals)
-        send_telegram_message(message)
-    
-    if not signals_found:
-        send_telegram_message("🔍 No RSI & MACD signals found today across any timeframe.")
+    # Send a SINGLE consolidated Telegram message with all results
+    if signals_found:
+        message_parts = []
+        
+        if buy_signals:
+            message_parts.append("✅ <b>NEW BUY SIGNALS</b>\n" + "\n".join(f"• {signal}" for signal in buy_signals))
+        
+        if sell_signals:
+            message_parts.append("🚨 <b>NEW SELL SIGNALS</b>\n" + "\n".join(f"• {signal}" for signal in sell_signals))
+        
+        # Join all message parts with newlines and send as one message
+        send_telegram_message("\n\n".join(message_parts))
+    else:
+        send_telegram_message("🔍 No new RSI & MACD signals found across any timeframe.")
 
 if __name__ == '__main__':
     run()
