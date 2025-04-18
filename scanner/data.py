@@ -4,6 +4,11 @@ import logging
 
 def get_data(symbol, interval='1d'):
     try:
+        # Special handling for ITC case
+        special_debug = (symbol == "ITC.NS")
+        if special_debug:
+            logging.info(f"📊 DEBUGGING: Special handling for {symbol}")
+        
         logging.info(f"Fetching data for {symbol} with interval {interval}")
         
         # Adjust period based on interval to ensure enough data for indicators
@@ -27,6 +32,14 @@ def get_data(symbol, interval='1d'):
         if len(data) < 30:  # Need at least 30 candles for reliable indicators
             logging.warning(f"Not enough data points for {symbol}: only {len(data)} candles")
             return None
+        
+        # Extra debug for ITC
+        if special_debug and interval == '1wk':
+            logging.info(f"ITC WEEKLY DATA - Recent close prices:")
+            for i in range(min(5, len(data))):
+                idx = len(data) - 1 - i
+                if idx >= 0:
+                    logging.info(f"  {data.index[idx]}: Close={data['Close'].iloc[idx]:.2f}")
             
         data['Symbol'] = symbol
         logging.info(f"Successfully fetched {len(data)} data points for {symbol}")
