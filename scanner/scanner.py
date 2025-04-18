@@ -20,8 +20,23 @@ NIFTY50_SYMBOLS = [
     "BRITANNIA.NS", "SHREECEM.NS", "ADANIENT.NS", "BAJAJ-AUTO.NS", "VEDL.NS"
 ]
 
-# Use only the top 15 for testing if needed
-# NIFTY50_SYMBOLS = NIFTY50_SYMBOLS[:15]
+# Add Nifty Next 50 stocks if desired
+NIFTY_NEXT50_SYMBOLS = [
+    "APOLLOHOSP.NS", "PIDILITIND.NS", "HAVELLS.NS", "BAJAJHLDNG.NS", "BERGEPAINT.NS",
+    "GODREJCP.NS", "MARICO.NS", "SIEMENS.NS", "DABUR.NS", "DLF.NS",
+    "BIOCON.NS", "LUPIN.NS", "BOSCHLTD.NS", "PGHH.NS", "AMBUJACEM.NS",
+    "BANDHANBNK.NS", "COLPAL.NS", "MCDOWELL-N.NS", "HINDPETRO.NS", "GAIL.NS",
+    "BANKBARODA.NS", "AUROPHARMA.NS", "PNB.NS", "CADILAHC.NS", "ACC.NS",
+    "HDFCAMC.NS", "ICICIGI.NS", "NAUKRI.NS", "INDIGO.NS", "MUTHOOTFIN.NS",
+    "PEL.NS", "MOTHERSUMI.NS", "NMDC.NS", "ICICIPRULI.NS", "CONCOR.NS",
+    "ADANITRANS.NS", "PAGEIND.NS", "DMART.NS", "SBICARD.NS", "PETRONET.NS",
+    "ABBOTINDIA.NS", "TORNTPHARM.NS", "UBL.NS", "OFSS.NS", "NHPC.NS",
+    "INDUSTOWER.NS", "MRF.NS", "MUTHOOTFIN.NS", "ADANIGREEN.NS", "GICRE.NS"
+]
+
+# Combine both lists if you want to scan both indices
+# ALL_SYMBOLS = NIFTY50_SYMBOLS + NIFTY_NEXT50_SYMBOLS
+ALL_SYMBOLS = NIFTY50_SYMBOLS  # Using only Nifty 50 for now
 
 TIMEFRAMES = {
     "Daily": "1d",
@@ -43,47 +58,7 @@ def run():
     buy_signals = []
     sell_signals = []
     
-    # Process ITC.NS first with special logging
-    if "ITC.NS" in NIFTY50_SYMBOLS:
-        special_symbol = "ITC.NS"
-        NIFTY50_SYMBOLS.remove(special_symbol)
-        
-        # Process ITC separately with extra logging
-        logging.info(f"🔍 Special processing for {special_symbol}")
-        
-        for label, interval in TIMEFRAMES.items():
-            logging.info(f"Processing {special_symbol} [{label}]")
-            try:
-                data = get_data(special_symbol, interval)
-                if data is None or len(data) < 3:
-                    logging.warning(f"Insufficient data for {special_symbol} [{label}]")
-                    continue
-                
-                signal, enriched = calculate_rsi_macd(
-                    data,
-                    **STRATEGY_PARAMS
-                )
-                
-                if signal:
-                    if signal == 'BUY':
-                        buy_signals.append(f"{special_symbol} [{label}]")
-                        logging.info(f"✅ Added {special_symbol} [{label}] to BUY signals")
-                    elif signal == 'SELL':
-                        sell_signals.append(f"{special_symbol} [{label}]")
-                        logging.info(f"🚨 Added {special_symbol} [{label}] to SELL signals")
-                        
-            except Exception as e:
-                logging.error(f"Error processing {special_symbol} [{label}]: {e}")
-        
-        # Put ITC back in the list at the beginning
-        NIFTY50_SYMBOLS.insert(0, special_symbol)
-    
-    # Process all other symbols
-    for symbol in NIFTY50_SYMBOLS:
-        # Skip ITC as it's already processed
-        if symbol == "ITC.NS":
-            continue
-            
+    for symbol in ALL_SYMBOLS:
         for label, interval in TIMEFRAMES.items():
             logging.info(f"Processing {symbol} [{label}]")
             try:
@@ -106,7 +81,7 @@ def run():
             except Exception as e:
                 logging.error(f"Error processing {symbol} [{label}]: {e}")
     
-    # Build the message - ONLY SEND ONE MESSAGE
+    # Build the message
     message_parts = []
     
     if buy_signals:
@@ -117,11 +92,10 @@ def run():
         sell_section = "🚨 <b>NEW SELL SIGNALS</b>\n" + "\n".join(f"• {signal}" for signal in sell_signals)
         message_parts.append(sell_section)
     
-    # Send exactly one message with everything combined
+    # Send exactly one message
     if message_parts:
         final_message = "\n\n".join(message_parts)
         logging.info(f"Sending alert with {len(buy_signals)} buy and {len(sell_signals)} sell signals")
-        # Send the message and track its state to prevent duplicates
         send_telegram_message(final_message)
     else:
         logging.info("No signals found")
