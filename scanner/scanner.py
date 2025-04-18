@@ -30,7 +30,6 @@ STRATEGY_PARAMS = {
 }
 
 def run():
-    signals_found = False
     buy_signals = []
     sell_signals = []
     
@@ -39,36 +38,38 @@ def run():
             logging.info(f"Processing {symbol} [{label}]")
             try:
                 data = get_data(symbol, interval)
-                if data is None:
-                    raise ValueError("No data returned")
+                if data is None or len(data) < 3:
+                    logging.warning(f"Insufficient data for {symbol} [{label}]")
+                    continue
                 
-                signal, enriched = calculate_rsi_macd(
+                signal, enriched, position_changed = calculate_rsi_macd(
                     data,
                     **STRATEGY_PARAMS
                 )
                 
-                if signal:
+                # Only add to signals if position actually changed in the latest candle
+                if signal and position_changed:
                     if signal == 'BUY':
                         buy_signals.append(f"{symbol} [{label}]")
-                        signals_found = True
                     elif signal == 'SELL':
                         sell_signals.append(f"{symbol} [{label}]")
-                        signals_found = True
                         
             except Exception as e:
                 logging.error(f"Error processing {symbol} [{label}]: {e}")
     
-    # Send a SINGLE consolidated Telegram message with all results
-    if signals_found:
-        message_parts = []
-        
-        if buy_signals:
-            message_parts.append("✅ <b>NEW BUY SIGNALS</b>\n" + "\n".join(f"• {signal}" for signal in buy_signals))
-        
-        if sell_signals:
-            message_parts.append("🚨 <b>NEW SELL SIGNALS</b>\n" + "\n".join(f"• {signal}" for signal in sell_signals))
-        
-        # Join all message parts with newlines and send as one message
+    # Create a single combined message
+    message_parts = []
+    
+    if buy_signals:
+        buy_section = "✅ <b>NEW BUY SIGNALS</b>\n" + "\n".join(f"• {signal}" for signal in buy_signals)
+        message_parts.append(buy_section)
+    
+    if sell_signals:
+        sell_section = "🚨 <b>NEW SELL SIGNALS</b>\n" + "\n".join(f"• {signal}" for signal in sell_signals)
+        message_parts.append(sell_section)
+    
+    # Send a single consolidated message or a "no signals" message
+    if message_parts:
         send_telegram_message("\n\n".join(message_parts))
     else:
         send_telegram_message("🔍 No new RSI & MACD signals found across any timeframe.")
