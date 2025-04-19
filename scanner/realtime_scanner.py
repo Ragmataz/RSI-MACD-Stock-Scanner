@@ -34,8 +34,7 @@ NIFTY50_SYMBOLS = [
 
 TIMEFRAMES = {
     "Daily": "1d",
-    "Weekly": "1wk",
-    "Monthly": "1mo"
+    "Weekly": "1wk"
 }
 
 # Strategy parameters from your inputs
