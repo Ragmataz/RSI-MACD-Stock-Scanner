@@ -40,8 +40,7 @@ ALL_SYMBOLS = NIFTY50_SYMBOLS  # Using only Nifty 50 for now
 
 TIMEFRAMES = {
     "Daily": "1d",
-    "Weekly": "1wk",
-    "Monthly": "1mo"
+    "Weekly": "1wk"
 }
 
 # Strategy parameters from your inputs
