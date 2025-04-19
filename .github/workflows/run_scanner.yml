@@ -2,9 +2,8 @@ name: Run Stock Scanner
 
 on:
   schedule:
-    # Run at market close - 16:00 IST (10:30 UTC) on weekdays
-    # Adjust this timing based on your requirements
-    - cron: '30 10 * * 1-5'
+    # Run at market open - 9:15 IST (3:45 UTC) on weekdays to start the continuous scanner
+    - cron: '45 3 * * 1-5'
   
   # Allow manual trigger from GitHub UI
   workflow_dispatch:
@@ -27,9 +26,19 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         
-    - name: Run scanner
+    - name: Run initial stock scan
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       run: |
+        # Run the regular scanner once to catch any overnight signals
         python main.py
+        
+    - name: Start continuous scanner (market hours)
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        # Run the continuous scanner for approximately 7 hours (covering Indian market hours)
+        # The scanner will self-adjust scan frequency based on market hours
+        timeout 25200 python realtime_scanner.py || echo "Scanner completed after market hours"
